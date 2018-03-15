@@ -1,0 +1,1 @@
+void displist(pln *curr);
