@@ -18,7 +18,9 @@ void clamp(int &a, int &b)
 void recurse_divide_by_mass(region &r){
   int i;
   
-  if( r.mass == 0 ) return;
+  if( r.mass == 0 ) return;//same thing as saying its empty
+  //this is after regions have been populated.
+  //need to do it somewhere else
   
   r.com = r.com / r.mass;
   if( r.level != LVL-1 ){
@@ -56,14 +58,15 @@ void populateRegions(planet BD[], int totalIndeces){
       clamp(c,n);
       z = a + b*n + c*n*n;
       index = getArrayIndex(i,z);
-      BD[j].level[i] = index;
+      BD[j].level[i] = index;//planet is in box index on level i
             
       if(regions[index].numPln == 0){	
 	regions[index].mass  = 0;
 	regions[index].com.x = 0;
 	regions[index].com.y = 0;
 	regions[index].com.z = 0;
-      }
+      }//set them to zero so you can add to itself
+       //resets the value. seeing box for first time
       
       regions[index].mass = regions[index].mass + BD[j].m;
       regions[index].com  = regions[index].com + BD[j].m * BD[j].pos;

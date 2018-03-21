@@ -55,7 +55,7 @@ void forceMagic(region regionToTest, planet &myplanet, planet *BD, double alpha)
 	  }
 	}
 	
-        myplanet.acc = myplanet.acc + (current.pos - myplanet.pos) * G * BD[currPln->plnNum].m / (rad*rad*rad) ;//Direct force calculation
+        myplanet.acc = myplanet.acc + (current.pos - myplanet.pos) * G * BD[currPln->plnNum].m / (rad*rad*rad);//Direct force calculation
 	//F = (current.pos - myplanet.pos) * G * myplanet.m * BD[currPln->plnNum].m / (rad*rad*rad) ;//Direct force calculation
         //myplanet.acc = myplanet.acc + F/myplanet.m;
       }
