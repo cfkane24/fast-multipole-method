@@ -6,21 +6,42 @@
 #include "pln.h"
 #include "region.h"
 #include "planet.h"
+#include "planetListFunctions.h"
 #include "dynamic_region.h"
 
-extern int LVL, N;
+extern int LVL, N, numDel;
 extern double L;
 extern int total_regions;
 
+void clearList(pln **list)
+{
+  //printf("!PLF: in clearLists \n");
+  pln *curr = *list;
+  pln *next;
+  //printf("!PLF: Start while loop\n");
+  int n=0;
+  while(curr!=NULL)
+  {
+    next = curr->nextPln;
+    //		printf("curr: %p  next: %p\n", curr, next);
+    free(curr);
+    curr = next;
+    n++;
+    numDel++;
+    //		printf("!PLF: # of elements cleared from this list: %d\n", n);
+  }
+  *list = NULL;
+}
+
 void dynamic_recurse_divide_by_mass(dynamic_region &r){
-  int i;
   
+  int i;
   if( r.mass == 0 ) return;//same thing as saying its empty
   //this is after regions have been populated.
   //need to do it somewhere else
   
   r.com = r.com / r.mass;
-  if( r.level != LVL-1 ){
+  if( r.numPln > 1 && r.level != LVL-1 ){
     for(i=0; i<8; i++){
       dynamic_recurse_divide_by_mass(*(r.child[i]));
     }
@@ -115,6 +136,7 @@ void addKids(dynamic_region &currentRegion){
   dynamic_region *newRegion;//pointer to the child region
   
   for(i=0;i<8;i++){
+    
     newRegion=(dynamic_region *)malloc(sizeof(dynamic_region));//give it memory
     newRegion->level = currentRegion.level + 1;
     newRegion->size  = currentRegion.size / 2.0;
@@ -124,6 +146,7 @@ void addKids(dynamic_region &currentRegion){
     newRegion->com.x  = 0;
     newRegion->com.y  = 0;
     newRegion->com.z  = 0;
+    newRegion->planets = NULL;
     currentRegion.child[i] = newRegion;//set pointer equal to newRegion pointer
     total_regions++;
     //if I do *child[i] is it the value the pointer child points to?
@@ -148,7 +171,10 @@ void loopOverPlanets(planet BD[]){
 void pop_level_0(dynamic_region &octree, planet BD[]){
   int i;
   octree.numPln = 0;
-  
+  octree.mass   = 0;
+  octree.com.x = 0;
+  octree.com.y = 0;
+  octree.com.z = 0;
   //printf("---In pop_level_0\n");
   for(i=0; i<N; i++){
     octree.numPln++;
@@ -159,18 +185,21 @@ void pop_level_0(dynamic_region &octree, planet BD[]){
     addPlanet(i, &octree.planets);    
   }
 
+  for(i=0; i<8; i++){
+    octree.child[i]=NULL;
+  }
   addKids(octree);
   //printf("---Out of pop_level_0\n");
 }
 
-void loopOverRegions(dynamic_region current_region, planet BD[]){
+void loopOverRegions(dynamic_region &current_region, planet BD[]){
 
   /*
     If the first region is done outside, do not need the 
     BD array.
    */
   //printf("-----In the beginning of loopOverRegions-----\n");
-  int i,j;
+  int i,j,k;
   int counter=0;
   pln *curr;
   pln *next;
@@ -179,52 +208,55 @@ void loopOverRegions(dynamic_region current_region, planet BD[]){
   vector region_pos;
   double region_size;
   
-  dynamic_region *kid;//pointer to a child
-
+  //printf("\n\n*****-----***** In a new loopOverRegions call *****-----*****\n\n");
   curr = current_region.planets;//cur points to the planet list of current_region
-  //printf("-----Right before while loop\n");
+  counter=0;
   
   while(curr != NULL){//loop over the list of planets in the parent function
-   
+    counter++;
+    //printf("---Looking at planet %d in the list\n",counter);
+    //printf("We have looked at %d planets in the list of the parent which has %d planets in it\n", counter, current_region.numPln);
+    
     j    = curr->plnNum;//number in the array of planets BD
-    next = curr->nextPln;//points to next planet
+    //printf("---j=%d\n",j);
+    next = curr->nextPln;//points to next pln
 
     //somehow plnNum gets taken from random memory but curr->nextPln is not null?
-    //printf("-------j=%d\n",j);
+    
+    //printf("-------parent region is on level %d\n", current_region.level);
     planet_pos = BD[j].pos;
-    //printf("-------About to put planets in the kids\n");
+    //printf("---------Looking at planet %d in the list of planets which has %d planets in it\n", counter, current_region.numPln);
+    
     for(i=0; i<8; i++){//loop over kids of parent region
-      //printf("---------Parent region has %d planet(s) in it\n", current_region.numPln);
-      //printf("---------Looking at child %d on level %d\n",i, current_region.child[i]->level);
-      kid = current_region.child[i];//kid now points to *child[i]
       
-      region_pos  = kid->location; //(*kid).pos
-      region_size = kid->size;//(*kid).size
+      region_pos  = current_region.child[i]->location;
+      region_size = current_region.child[i]->size;
+      
       //printf("---------Child %d is at (%.3f, %.3f, %.3f) and is %.3f big\n",i,region_pos.x, region_pos.y, region_pos.z, region_size);
+      //printf("---------Planet %d is at (%.3f, %.3f, %.3f)\n",j,planet_pos.x,planet_pos.y,planet_pos.z);
       if(inThisChild(planet_pos, region_pos, region_size)){
-	addPlanet(j, &(kid->planets));
-	kid->numPln++;
-	kid->mass += BD[j].m;
-	kid->com = kid->com + BD[j].m * BD[j].pos;
+	addPlanet(j, &(current_region.child[i]->planets));
+	current_region.child[i]->numPln++;
+	current_region.child[i]->mass += BD[j].m;
+	current_region.child[i]->com = current_region.child[i]->com + BD[j].m * BD[j].pos;
 	//printf("-----------Planet was in child %d\n",i);
 	break;//break from the loop if we found what child it is in
       }
-      //printf("---------Done with  child %d\n",i);
     }
-    //printf("-------Found the planet\n");
     curr = next;
-    
     //printf("-------curr=next is done\n");
-    counter++;
   }
-  //printf("-----About to loop over the kids-----\n");
+  
+  // printf("-----About to loop over the kids\n");
+
+  
+  //if it is not on the lowest level, check if they need kids
   for(i=0; i<8; i++){
-    kid = current_region.child[i];
-    //printf("Kid on level %d, has %d planets in it\n", kid->level, kid->numPln);
-    if(kid->numPln != 0 && kid->level != LVL-1){
-      //if it has planets in it AND it is not on the lowest level
-      addKids(*kid);
-      loopOverRegions(*kid, BD);
+    //printf("*******Kid %d on level %d, has %d planets in it\n", i, kid->level, kid->numPln);
+    if(current_region.child[i]->numPln > 1 && current_region.child[i]->level != LVL-1){
+      //if it has more than one kid in it AND it is not on the lowest level
+      addKids(*current_region.child[i]);
+      loopOverRegions(*current_region.child[i], BD);
     }
   }
 }
