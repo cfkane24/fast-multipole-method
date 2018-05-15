@@ -1,14 +1,13 @@
-//#include "vector.h"
-
-typedef struct name
+typedef struct region_placeholder
 {
-  int level;
-  int i,j,k;
-  int numPln;
-  double mass;
-  vector com;
-  pln *planets;
-  int kids[8];//FIXME Will be a list of eight pointers b/c eight kids
+  int level;//constant
+  int numPln;//dynamic
+  double size;//constant
+  double mass;//dynamic
+  vector com;//dynamic
+  vector location;//constant
+  pln *planets;//dynamic
+  region_placeholder *child[8];//dynamic
 } region;
 
-extern region *regions;
+extern region octree;

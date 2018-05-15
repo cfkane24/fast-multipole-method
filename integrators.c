@@ -62,7 +62,8 @@ void leapfrog( planet BD[], int method )
   
   else{
     for( i=0; i<N; i++ ){
-      forceMagic(regions[0], BD[i], BD, alpha);
+      //printf("!-----Doing force calculation for planet %d\n",i);
+      forceMagic(octree, BD[i], BD, alpha);
     }
   }
   collision_check = 0;
@@ -174,13 +175,14 @@ void omelyan( planet BD[], int method )
   Position_Step_1(BD);
   Reset_Accelerations(BD);
 
+
   if( method == 0 ){
     Exact_Force(BD);
   }
   
   else{
     for(i=0; i<N; i++){
-      forceMagic(regions[0], BD[i], BD, alpha);
+      forceMagic(octree, BD[i], BD, alpha);
     }
   }
     
@@ -194,7 +196,7 @@ void omelyan( planet BD[], int method )
   
   else{
     for(i=0; i<N; i++){
-      forceMagic(regions[0], BD[i], BD, alpha);
+      forceMagic(octree, BD[i], BD, alpha);
     }
   }
     
@@ -208,7 +210,7 @@ void omelyan( planet BD[], int method )
   
   else{
     for(i=0; i<N; i++){
-      forceMagic(regions[0], BD[i], BD, alpha);
+      forceMagic(octree, BD[i], BD, alpha);
     }
   }
     
@@ -225,7 +227,7 @@ void omelyan( planet BD[], int method )
   else{
     
     for(i=0; i<N; i++){
-      forceMagic(regions[0], BD[i], BD, alpha);
+      forceMagic(octree, BD[i], BD, alpha);
     }
   }
   collision_check = 0;

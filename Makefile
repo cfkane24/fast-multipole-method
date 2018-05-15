@@ -25,9 +25,6 @@ initialize.o : initialize.c vector.h planet.h
 integrators.o : integrators.c vector.h planet.h pln.h region.h force.h exactForce.h
 	g++ -c integrators.c
 
-intVec.o : intVec.c
-	g++ -c intVec.c
-
 systemProperties.o : systemProperties.c vector.h planet.h
 	g++ -c systemProperties.c
 
