@@ -1,0 +1,8 @@
+LVL       7
+N         100 
+dt        1e-3
+frameskip 10
+v_i       2
+L         100
+scatter   80
+alpha     4
