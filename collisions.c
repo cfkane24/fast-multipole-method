@@ -13,9 +13,7 @@ extern int collision_pair_1[];
 extern int collision_pair_2[];
 extern double dt;
 extern double rho;
-extern double heat_E;
 extern double G;
-extern double E_init;
 extern double r_i;
 
 /********************************************/
