@@ -5,7 +5,6 @@
 #include "planet.h"
 #include "pln.h"
 #include "region.h"
-#include "wellSepCom.h"
 #include "timing.h"
 
 extern double G;
@@ -14,97 +13,94 @@ extern int collision_pair_2[];
 extern int collision_number;
 extern int collision_check;
 extern int LVL;
+extern long int proclist[];
 
-void forceMagic(region regionToTest, planet &myplanet, planet *BD, double alpha){
+extern double alpha;
+extern float alphasq;
 
-  int i, in_box;
+void forceMagic(const region &regionToTest, planet &myplanet, const planet *BD){
+
+  bool process, redoCOM;
+  int i;
   double k;
-  double rad;
+  double radsq,rad;
   pln *curr_pln;
   planet curr_planet;
-  double newMass;
-  vector newCOM;
+  process=false;
+  redoCOM=false;
+  radsq=0;
   vector da;
-
-  da.x=da.y=da.z=0;
-
-  //printf("!region is on level %d with %d planets\n", regionToTest.level, regionToTest.numPln);
-  if(regionToTest.level == (LVL-1) || regionToTest.numPln == 1){
-    curr_pln = regionToTest.planets;
-    while(curr_pln != NULL){//loop through planet list
-      curr_planet = BD[curr_pln->plnNum];
-      rad = radius(myplanet.pos, curr_planet.pos);
-      
-      if (rad > 0){ //very crude check to make sure it's not the same planet pulling on itself
-	if( collision_check ){
-	  if( rad < 0.8*(myplanet.r + curr_planet.r) && (myplanet.num > curr_planet.num )){//this actually decides if things hit.
-	    collision_pair_1[collision_number] = myplanet.num;
-	    collision_pair_2[collision_number] = curr_planet.num;
-	    collision_number++;
-	  }
-	}
-		
-	myplanet.acc = myplanet.acc + (curr_planet.pos - myplanet.pos) * G * curr_planet.m / (rad*rad*rad);
-      }
-      curr_pln = curr_pln->nextPln;
-    }
+  vector newCOM;
+  double newMass;
+  
+  if(regionToTest.numPln == 1)
+  { // if region has one planet
+    if(regionToTest.planets->plnNum == myplanet.num) return; // if it's me, abort
+    else process = true; // otherwise mark region for processing
   }
+  
+  else
+  {// check well-separation
+    radsq = Magnitude_Sq(regionToTest.com-myplanet.pos); 
+    k = radsq/(regionToTest.size*regionToTest.size);
+    if(k>alphasq) process = true;
+  }
+  
+  if(process)
+  {
+// do region
+    starttimer(0);
+    ++proclist[regionToTest.level];
+    if (radsq) rad=sqrt(radsq); 
+    else rad = radius(myplanet.pos,regionToTest.com);
 
-  else{
-    k = wellSepCom(myplanet, regionToTest);
-    if( k > (alpha*alpha) ){
-      curr_pln = regionToTest.planets;
-      in_box = 0;
-      while(curr_pln != NULL ){
-	if(curr_pln->plnNum == myplanet.num){
-	  in_box = 1;
-	  break;
+    //*******************************
+    // Need to decide if things collide or not
+    // This collision check code is only used by Chris
+
+    if(collision_check)
+    {//only check at the last Omelyan force step
+      //if one planet do it
+      if(regionToTest.numPln == 1)
+      {
+	curr_planet=BD[regionToTest.planets->plnNum];
+	if( rad < 0.8*(myplanet.r + curr_planet.r) && (myplanet.num > curr_planet.num))
+	{
+	   collision_pair_1[collision_number] = myplanet.num;
+	   collision_pair_2[collision_number] = curr_planet.num;
+	   collision_number++;
 	}
-	curr_pln = curr_pln->nextPln;
       }
-      if( in_box == 1 ){
-	//the planet is in the same region as the box
-	//must subtract out the contrubition to theforce from
-	newCOM  = (regionToTest.mass * regionToTest.com - myplanet.m * myplanet.pos) / (regionToTest.mass - myplanet.m);
-	newMass = regionToTest.mass - myplanet.m;
-	rad = radius(myplanet.pos, newCOM);
-
-	//da = newMass * (newCOM - myplanet.pos)  * G / (rad*rad*rad);
-	/*
-	if(sqrt(da*da) > 150){
-	  printf("!2___da = (%.3f, %.3f, %.3f)\n", da.x, da.y, da.z);
-	  printf("!___**Original region level = %d\n", regionToTest.level);
-	  printf("!___**Original region mass = %.3f\n", regionToTest.mass);
-	  printf("!___**Planet mass = %.3f\n", myplanet.m);
-	  printf("!___**Region mass = %.3f\n", newMass);
-	  printf("!___**Region com = (%.3f, %.3f, %.3f)\n", newCOM.x, newCOM.y, newCOM.z);
-	  printf("!___**Planet loc = (%.3f, %.3f, %.3f)\n", myplanet.pos.x, myplanet.pos.y, myplanet.pos.z);
-	  printf("!___**rad = %.3f\n", rad);
+      
+      else if(myplanet.r > alpha*regionToTest.size)
+      {
+	curr_pln = regionToTest.planets;
+	while(curr_pln != NULL)
+	{
+	  curr_planet=BD[curr_pln->plnNum];
+	  if( rad < 0.8*(myplanet.r + curr_planet.r) && (myplanet.num > curr_planet.num))
+	  {
+	      collision_pair_1[collision_number] = myplanet.num;
+	      collision_pair_2[collision_number] = curr_planet.num;
+	      collision_number++;
+	  }
+	  curr_pln = curr_pln->nextPln;
 	}
-	*/
-	myplanet.acc = myplanet.acc + newMass * (newCOM - myplanet.pos)  * G / (rad*rad*rad);
-      }
-      else{
-	rad = radius(myplanet.pos,regionToTest.com);
-	//da = regionToTest.mass * (regionToTest.com-myplanet.pos)  * G / (rad*rad*rad);
-	//if(sqrt(da*da) > 150) printf("!3___da = (%.3f, %.3f, %.3f)\n", da.x, da.y, da.z);
-
-	
-	myplanet.acc = myplanet.acc + regionToTest.mass * (regionToTest.com-myplanet.pos)  * G / (rad*rad*rad);
       }
     }
-    /*
-    if(k>(alpha*alpha)){
-      rad = radius(myplanet.pos, regionToTest.com);
-      myplanet.acc = myplanet.acc + regionToTest.mass * (regionToTest.com-myplanet.pos) * G / (rad*rad*rad);
-    }
-    */
-    else{
-      for(i=0; i<8; i++){
-	if(regionToTest.child[i]->planets != NULL){
-	  forceMagic(*regionToTest.child[i], myplanet, BD, alpha);
-	}
+
+    myplanet.acc += regionToTest.mass * (regionToTest.com-myplanet.pos) * G / (rad*rad*rad);
+  }
+  
+  else
+  {// recurse
+    for(i=0; i<8; i++)
+    {
+      if(regionToTest.child[i] != NULL)
+      {
+	forceMagic(*regionToTest.child[i], myplanet, BD);
       }
     }
   }
 }
+
