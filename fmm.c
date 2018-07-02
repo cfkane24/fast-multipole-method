@@ -106,6 +106,7 @@ void showOctree(region parent)
 }
 
 
+
 int main(int nParam, char **paramList)
 {  
   char var[100], val[100];//Placeholders to be used when reading from config.txt
