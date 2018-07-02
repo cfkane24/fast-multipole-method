@@ -5,17 +5,23 @@ typedef struct
   double z;
 }vector;
 
-vector operator+(vector a, vector b);
-vector operator+(vector a, double b);
-vector operator+(double a, vector b);
-double operator*(vector a, vector b);
-vector operator^(vector a, vector b);
-vector operator*(double a, vector b);
-vector operator*(vector a, double b);
-vector operator-(vector a, vector b);
-vector operator/(vector a, double b);
+vector operator+(const vector& a, const vector& b);
+vector operator+(const vector& a, const double& b);
+vector operator+(const double& a, const vector& b);
+double operator*(const vector& a, const vector& b);
+vector operator^(const vector& a, const vector& b);
+vector operator*(const double& a, const vector& b);
+vector operator*(const vector& a, const double& b);
+vector operator-(const vector& a, const vector& b);
+vector operator-(const vector& a, const double& b);
+vector operator/(const vector& a, const double& b);
+void operator+=(vector& a, const vector& b);
+void operator+=(vector& a, const double& b);
+void operator-=(vector& a, const vector& b);
+void operator-=(vector& a, const double& b);
 
-double Magnitude( vector vec );
-double Magnitude_Sq( vector vec );
-double radius( vector BD1, vector BD2 );
+double Magnitude(const vector& vec);
+double Magnitude_Sq(const vector& vec);
+double Magnitude_Cubed(const vector& vec);
+double radius(const vector& BD1, const vector& BD2);
 
