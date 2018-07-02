@@ -9,6 +9,28 @@
 extern int LVL, N, numDel;
 extern double L;
 extern int total_regions;
+extern vector BDCOM;
+extern int currTotalRegions;
+
+void countRegions(region parent)
+{
+  int i;
+  currTotalRegions++;
+  for(i=0; i<8; i++)
+  {
+    if(parent.child[i] != NULL) countRegions(*(parent.child[i]));
+  }
+}
+
+int countChildren(region parent)
+{
+  int i, numChild=0;
+  for(i=0; i<8; i++)
+  {
+    if (parent.child[i] != NULL) numChild++;
+  }
+  return numChild;
+}
 
 void clearList(pln **list)
 {
@@ -38,120 +60,83 @@ void recurse_divide_by_mass(region &r){
   //need to do it somewhere else
   
   r.com = r.com / r.mass;
-  if( r.numPln > 1 && r.level != LVL-1 ){
+  // printf("!popRegions.c/recurse_divide_by_mass: region at level %d has total mass %.2e with com at %.4e %.2e %.2e\n", r.level, r.mass, r.com.x, r.com.y, r.com.z);
+  if(r.numPln > 1){
     for(i=0; i<8; i++){
-      recurse_divide_by_mass(*(r.child[i]));
+      if(r.child[i]!=NULL) recurse_divide_by_mass(*(r.child[i]));
     }
   }
 }
 
-int inThisChild(vector planet_pos, vector region_pos, double region_size){
-
-    
+int inThisChild(vector planet_pos, vector region_pos, double region_size)
+{    
   double x,y,z;
   
   x=planet_pos.x;
   y=planet_pos.y;
   z=planet_pos.z;
 
-  if(x > L) x = L - region_size/2.0;
-  if(y > L) y = L - region_size/2.0;
-  if(z > L) z = L - region_size/2.0;
+  // if(x > L) x = L - region_size/2.0;
+  // if(y > L) y = L - region_size/2.0;
+  // if(z > L) z = L - region_size/2.0;
 
-  if(x < 0) x = region_size/2.0;
-  if(y < 0) y = region_size/2.0;
-  if(z < 0) z = region_size/2.0;
+  // if(x < 0) x = region_size/2.0;
+  // if(y < 0) y = region_size/2.0;
+  // if(z < 0) z = region_size/2.0;
   /*
     If the planet is outsize the bounds, it gets
     put in the box on the outermost edge.
    */
   
-  int truth;
+  int truth = 0;
 
-  if(x > region_pos.x && x < (region_pos.x + region_size)){
-    if(y > region_pos.y && y < (region_pos.y + region_size)){
-      if(z > region_pos.z && z < (region_pos.z + region_size)){
+  if(x >= region_pos.x && x < (region_pos.x + region_size)){
+    if(y >= region_pos.y && y < (region_pos.y + region_size)){
+      if(z >= region_pos.z && z < (region_pos.z + region_size)){
 	truth = 1;
       }
-      else{
-	truth = 0;
-      }
     }
-    else{
-      truth = 0;
-    }
-  }
-  else{
-    truth = 0;
   }
   return truth;
 }
 
-vector assignLocation(int i, region currentRegion){
-
-  double l = currentRegion.size/2.0;
-  vector d = currentRegion.location;
-  
-  if(i==0){//bottom, left, front
-    d = d;
-  }
-  else if(i==1){//top, left, front
-    d.x += l;
-  }
-  else if(i==2){//top, left, back
-    d.x += l;
-    d.z += l;
-  }
-  else if(i==3){//bottom, right, front
-    d.y += l;
-  }
-  else if(i==4){//top, right, front
-    d.x += l;
-    d.y += l;
-  }
-  else if(i==5){//bottom, right, back
-    d.y += l;
-    d.z += l;
-  }
-  else if(i==6){//bottom, left, back
-    d.z += l;
-  }
-  else if(i==7){//top, right, back
-    d.x += l;
-    d.y += l;
-    d.z += l;
-  }
-  else{
-    printf("Looping over more than 8 children, somethin is messed up\n"); exit(0);
-  }
-  return d;
-}
 
 void addKids(region &currentRegion){
 
-  int i;
+  int i=0;
+  int j,a,b,c;
   region *newRegion;//pointer to the child region
-  
-  for(i=0;i<8;i++){
-    
-    newRegion=(region *)malloc(sizeof(region));//give it memory
-    newRegion->level = currentRegion.level + 1;
-    newRegion->size  = currentRegion.size / 2.0;
-    newRegion->location = assignLocation(i, currentRegion);
-    newRegion->mass   = 0;
-    newRegion->numPln = 0;
-    newRegion->com.x  = 0;
-    newRegion->com.y  = 0;
-    newRegion->com.z  = 0;
-    newRegion->planets = NULL;
-    currentRegion.child[i] = newRegion;//set pointer equal to newRegion pointer
-    total_regions++;
-    //if I do *child[i] is it the value the pointer child points to?
-    //I just want child[i] to point to newRegion
-    //so if I set the pointers equal, then they point in the same place?
+  double l = currentRegion.size/2.0;
+  // whoever came up with this for loop, much more clever than my idea. -CK
+  for(a=0; a<2; a++)
+  {
+    for(b=0; b<2; b++)
+    {
+      for(c=0; c<2; c++)
+      {    
+	newRegion=(region *)malloc(sizeof(region));//give it memory
+	newRegion->level = currentRegion.level + 1;
+	newRegion->size  = currentRegion.size / 2.0;
+	newRegion->mass   = 0;
+	newRegion->numPln = 0;
+	newRegion->com.x  = 0;
+	newRegion->com.y  = 0;
+	newRegion->com.z  = 0;
+	newRegion->location.x = currentRegion.location.x + a*l;
+	newRegion->location.y = currentRegion.location.y + b*l;
+	newRegion->location.z = currentRegion.location.z + c*l;
+	newRegion->planets = NULL;// planet list set to NULL
+	
+	for(j=0; j<8; j++) newRegion->child[j] = NULL;
+	
+	currentRegion.child[i] = newRegion;//set pointer equal to newRegion pointer
+	total_regions++;
+	i++;
+      }
+    }
   }
 }
-
+  
 void addPlanet(int num, pln **list)
 {
   pln *newPln;
@@ -165,26 +150,44 @@ void addPlanet(int num, pln **list)
 void loopOverPlanets(planet BD[]){
 }
 
-void pop_level_0(region &octree, planet BD[]){
+void pop_level_0(region &octree, planet BD[])
+{
   int i;
+  vector test;
+  vector extreme; // this vector will store the extreme displacement vectors 
+                  // from the COM to determine what L needs to be
+  vector extreme_planet_num;
+  if(octree.level != 0)
+  {
+    printf("!pop_level_0 working on a region not on level 0\n");
+    exit(0);
+  }
+  
   octree.numPln = 0;
-  octree.mass   = 0;
+  octree.mass  = 0;
+  octree.size = L;
+  octree.location.x = BDCOM.x - L/2.0;
+  octree.location.y = BDCOM.y - L/2.0;
+  octree.location.z = BDCOM.z - L/2.0;
   octree.com.x = 0;
   octree.com.y = 0;
   octree.com.z = 0;
   //printf("---In pop_level_0\n");
-  for(i=0; i<N; i++){
+  
+  for(i=0; i<N; i++)
+  {
     octree.numPln++;
-        
+     
     octree.mass += BD[i].m;
     octree.com   = octree.com + BD[i].m * BD[i].pos;
-
+        
     addPlanet(i, &octree.planets);    
   }
 
-  for(i=0; i<8; i++){
-    octree.child[i]=NULL;
-  }
+  octree.com = octree.com/octree.mass;
+
+  for(i=0; i<8; i++) octree.child[i]=NULL;
+  
   addKids(octree);
   //printf("---Out of pop_level_0\n");
 }
@@ -200,6 +203,7 @@ void loopOverRegions(region &current_region, planet BD[]){
   int counter=0;
   pln *curr;
   pln *next;
+  bool freed;
 
   vector planet_pos;
   vector region_pos;
@@ -209,49 +213,42 @@ void loopOverRegions(region &current_region, planet BD[]){
   curr = current_region.planets;//cur points to the planet list of current_region
   counter=0;
   
-  while(curr != NULL){//loop over the list of planets in the parent function
+  while(curr != NULL)
+  { // loop over the list of planets in the parent function
     counter++;
-    //printf("---Looking at planet %d in the list\n",counter);
-    //printf("We have looked at %d planets in the list of the parent which has %d planets in it\n", counter, current_region.numPln);
-    
-    j    = curr->plnNum;//number in the array of planets BD
-    //printf("---j=%d\n",j);
-    next = curr->nextPln;//points to next pln
-
-    //somehow plnNum gets taken from random memory but curr->nextPln is not null?
-    
-    //printf("-------parent region is on level %d\n", current_region.level);
+    j = curr->plnNum; // number in the array of planets BD[j]
+    next = curr->nextPln; // points to next pln
     planet_pos = BD[j].pos;
-    //printf("---------Looking at planet %d in the list of planets which has %d planets in it\n", counter, current_region.numPln);
     
-    for(i=0; i<8; i++){//loop over kids of parent region
-      
+    for(i=0; i<8; i++)
+    { // loop over kids of parent region
       region_pos  = current_region.child[i]->location;
       region_size = current_region.child[i]->size;
       
-      //printf("---------Child %d is at (%.3f, %.3f, %.3f) and is %.3f big\n",i,region_pos.x, region_pos.y, region_pos.z, region_size);
-      //printf("---------Planet %d is at (%.3f, %.3f, %.3f)\n",j,planet_pos.x,planet_pos.y,planet_pos.z);
-      if(inThisChild(planet_pos, region_pos, region_size)){
+      if( inThisChild(planet_pos, region_pos, region_size) )
+      {
 	addPlanet(j, &(current_region.child[i]->planets));
 	current_region.child[i]->numPln++;
 	current_region.child[i]->mass += BD[j].m;
 	current_region.child[i]->com = current_region.child[i]->com + BD[j].m * BD[j].pos;
-	//printf("-----------Planet was in child %d\n",i);
-	break;//break from the loop if we found what child it is in
+	break; // break from the loop if we found what child it is in
       }
     }
     curr = next;
-    //printf("-------curr=next is done\n");
   }
-  
-  // printf("-----About to loop over the kids\n");
-
-  
-  //if it is not on the lowest level, check if they need kids
+  // if it is not on the lowest level, check if they need kids
   for(i=0; i<8; i++){
-    //printf("*******Kid %d on level %d, has %d planets in it\n", i, kid->level, kid->numPln);
-    if(current_region.child[i]->numPln > 1 && current_region.child[i]->level != LVL-1){
-      //if it has more than one kid in it AND it is not on the lowest level
+    // currTotalRegions = 0;
+    // freed = false;
+    // countRegions(octree);
+    if(current_region.child[i]->numPln == 0)
+    {
+      free(current_region.child[i]);
+      current_region.child[i]=NULL;
+      total_regions--;
+    }
+    else if(current_region.child[i]->numPln > 1)
+    {
       addKids(*current_region.child[i]);
       loopOverRegions(*current_region.child[i], BD);
     }
