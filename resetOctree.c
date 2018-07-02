@@ -19,10 +19,12 @@ void resetOctree(region& parent_region){
   if(parent_region.numPln > 1 && parent_region.level != LVL-1){
     //if true, has kids to loop over
     for(i=0; i<8; i++){
-      //      printf("*****Looking at child %d\n",i);
-      resetOctree(*parent_region.child[i]);
-      free(parent_region.child[i]);
-      parent_region.child[i]=NULL;
+      if(parent_region.child[i]!=NULL)
+      {
+	resetOctree(*parent_region.child[i]);
+	free(parent_region.child[i]);
+	parent_region.child[i]=NULL;
+      }
     }
   }
 }
