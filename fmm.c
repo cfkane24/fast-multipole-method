@@ -73,9 +73,9 @@ void setL(planet *BD, vector com)
 	double xmax=0, ymax=0, zmax=0;
 	for(i=0; i<N; i++)
 	{
-	  if( abs(BD[i].pos.x - com.x) > xmax) xmax = abs(BD[i].pos.x - com.x);
-	  if( abs(BD[i].pos.y - com.y) > ymax) ymax = abs(BD[i].pos.y - com.y);
-	  if( abs(BD[i].pos.z - com.z) > zmax) zmax = abs(BD[i].pos.z - com.z);
+	  if( fabs(BD[i].pos.x - com.x) > xmax) xmax = fabs(BD[i].pos.x - com.x);
+	  if( fabs(BD[i].pos.y - com.y) > ymax) ymax = fabs(BD[i].pos.y - com.y);
+	  if( fabs(BD[i].pos.z - com.z) > zmax) zmax = fabs(BD[i].pos.z - com.z);
 	}
 	L=xmax;
 	if(ymax > L) L=ymax;
