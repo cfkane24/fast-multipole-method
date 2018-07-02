@@ -3,18 +3,29 @@
 #include <stdlib.h>
 #include "vector.h"
 #include "planet.h"
+#include "integrators.h"
+#include "systemProperties.h"
 
 extern int N;
+extern int nbounce;
 extern int collision_number;
 extern int collision_pair_1[];
 extern int collision_pair_2[];
+extern double dt;
 extern double rho;
+extern double heat_E;
+extern double G;
+extern double E_init;
+extern double r_i;
 
 /********************************************/
 
-void compactify(planet BD[]){
-  for(int i=0; i<N; i++){
-    if (BD[i].m==0){
+void compactify(planet BD[])
+{
+  for(int i=0; i<N; i++)
+  {
+    if (BD[i].m==0)
+    {
       N--;
       BD[i].pos = BD[N].pos;
       BD[i].vel = BD[N].vel;
@@ -27,8 +38,8 @@ void compactify(planet BD[]){
 /********************************************/
 
 //void Bounce(planet BD[], int i, int j){
-void bounce(planet &BD1, planet &BD2){
-
+void bounce(planet &BD1, planet &BD2)
+{
   double m1, m2;
   vector r1, r2, r, r_hat;
   vector v1, v2, vcm, delta_v;
@@ -41,8 +52,7 @@ void bounce(planet &BD1, planet &BD2){
 
   v1 = BD1.vel;
   v2 = BD2.vel;
-  
-  
+   
   vcm = ( m1 * v1 + m2 * v2 ) / ( m1 + m2 );
 
   //printf("!vx = %f, vy = %f, vz = %f\n",vcm.x, vcm.y, vcm.z);
@@ -64,14 +74,14 @@ void bounce(planet &BD1, planet &BD2){
 
   BD1.vel = v1;
   BD2.vel = v2;
-  
 }
 
 /********************************************/
 
-//void Stick(planet BD[], int i, int j){
-void stick(planet &BD1, planet &BD2){
-
+void stick(planet &BD1, planet &BD2)
+{
+  double Ei, Ef, dE;
+  
   BD1.pos = (BD1.m*BD1.pos + BD2.m*BD2.pos)/(BD1.m + BD2.m); 
   BD1.vel = (BD1.m*BD1.vel + BD2.m*BD2.vel)/(BD1.m + BD2.m);
   BD1.m   = (BD1.m + BD2.m);
@@ -79,29 +89,32 @@ void stick(planet &BD1, planet &BD2){
   //don't shift planets yet, since if planet N-1 also collides this breaks things. 
   //just mark planet j as "to be deleted" by setting its mass to zero.
   //we can then compactify the planet list later.
-  BD2.m=0;  
+  BD2.m=0;
 }
 
 /********************************************/
 
-int collisionCheck(planet BD[]){
-
+int collisionCheck(planet BD[])
+{
   int i,j;
   int ndel = 0;
   double rad;
   
-  for(int k=0; k<collision_number; k++){
+  for(int k=0; k<collision_number; k++)
+  {
     i = collision_pair_1[k];
     j = collision_pair_2[k];
-    if(i != j){
+    if(i != j)
+    {
       rad = radius(BD[i].pos, BD[j].pos);
-      if( rad < 0.8*(BD[i].r + BD[j].r)){
-	if(drand48() > 0.5){
+      
+      if( rad < 0.8*(BD[i].r + BD[j].r))
+      {
+	if(drand48() > 0.5) bounce(BD[i], BD[j]);
+	else
+	{
 	  stick(BD[i], BD[j]);
 	  ndel++;
-	}
-	else{
-	  bounce(BD[i], BD[j]);
 	}
       }
     }
