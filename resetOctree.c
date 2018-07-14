@@ -16,15 +16,13 @@ void resetOctree(region& parent_region){
   if( parent_region.planets != NULL ) clearList(&parent_region.planets);
     
   //if(parent_region.child[0] != NULL && parent_region.level != LVL-1){
-  if(parent_region.numPln > 1 && parent_region.level != LVL-1){
-    //if true, has kids to loop over
-    for(i=0; i<8; i++){
-      if(parent_region.child[i]!=NULL)
-      {
-	resetOctree(*parent_region.child[i]);
-	free(parent_region.child[i]);
-	parent_region.child[i]=NULL;
-      }
+  for(i=0; i<8; i++){
+    if(parent_region.child[i]!=NULL)
+    { // it has kids to erase
+      resetOctree(*parent_region.child[i]);
+      free(parent_region.child[i]);
+      parent_region.child[i]=NULL;
     }
   }
 }
+
